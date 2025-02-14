@@ -1,0 +1,28 @@
+{
+  "template": "https://github.com/FAIRmat-NFDI/cookiecutter-nomad-plugin",
+  "commit": "5f38479d519664f77a5ea3b7790efb31253b7cc9",
+  "checkout": null,
+  "context": {
+    "cookiecutter": {
+      "full_name": "Esma Boydas",
+      "email": "esma.boydas@physik.hu-berlin.de",
+      "github_username": "EBB2675",
+      "plugin_name": "nomad-parser-qutip",
+      "module_name": "nomad_parser_qutip",
+      "short_description": "a parser for QuTiP while extending the nomad-simulations schema",
+      "version": "0.1.0",
+      "license": "Apache Software License 2.0",
+      "include_schema_package": true,
+      "include_normalizer": false,
+      "include_parser": true,
+      "include_app": false,
+      "include_example_uploads": false,
+      "_copy_without_render": [
+        "*.html"
+      ],
+      "_template": "https://github.com/FAIRmat-NFDI/cookiecutter-nomad-plugin",
+      "_commit": "5f38479d519664f77a5ea3b7790efb31253b7cc9"
+    }
+  },
+  "directory": null
+}
