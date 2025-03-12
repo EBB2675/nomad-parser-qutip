@@ -31,15 +31,5 @@ class QutipParser(MatchingParser):
         # here we are populating the archive with the program name
         simulation.program = Program(name='QuTiP')
 
-        # an example Qobj instance:
-        # qobj_instance = Qobj(
-        # dims=[[2], [1]],
-        # shape=[2, 1],
-        # type='ket',
-        # dtype='Dense',
-        # isherm=True,
-        # data=np.array([[1.0], [0.0]]),
-        # )
-
         # put the simulation section into archive data
         archive.data = simulation

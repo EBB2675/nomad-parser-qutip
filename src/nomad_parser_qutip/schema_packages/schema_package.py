@@ -8,7 +8,9 @@ if TYPE_CHECKING:
 import numpy as np
 from nomad.config import config
 from nomad.datamodel.data import ArchiveSection
-from nomad.metainfo import MEnum, Quantity, SchemaPackage
+from nomad.metainfo import MEnum, Quantity, SchemaPackage, SubSection
+from nomad_simulations.schema_packages.general import Simulation
+from nomad_simulations.schema_packages.model_system import ModelSystem
 
 configuration = config.get_plugin_entry_point(
     'nomad_parser_qutip.schema_packages:schema_package_entry_point'
@@ -17,26 +19,26 @@ configuration = config.get_plugin_entry_point(
 m_package = SchemaPackage()
 
 
-class Qobj(ArchiveSection):
+class QuantumObject(ArchiveSection):
     """
-    A section to semantically represent a QuTiP Qobj.
+    A framework-agnostic data container for storing states/operators/superoperators.
 
-    The main quantities are:
-        dims   : Hilbert space dimensions.
-        shape  : Shape of the underlying data.
-        type   : MEnum to label the Qobj (e.g. 'ket', 'bra', 'oper', 'super').
-        dtype  :  The data type indicator (for example, 'Dense' or 'csr') showing the
-        numerical storage format.
-        isherm : Boolean flag indicating whether an operator is Hermitian.
-        data   : Matrix representing state or operator.
+    The key fields track:
+      - dimensional structure (`dims`, `shape`),
+      - type of object (`ket`, `bra`, `oper`, `super`, `dm`, etc.),
+      - numerical storage format (e.g., 'Dense', 'csr'),
+      - Hermiticity flag,
+      - the underlying data (complex matrix or vector).
     """
 
+    # !!! dims might be a list of lists describing the Hilbert space.
     dims = Quantity(
         type=np.int32,
         shape=['*', '*'],
         description=(
-            """List of dimensions keeping track of the tensor structure.
-            Example for a ket: [[2], [1]]."""
+            """Tensor-product dimensions.
+            For example, a single qubit ket might be [[2], [1]],
+            or a 2-qubit system [[2,2],[1,1]]."""
         ),
     )
 
@@ -44,56 +46,150 @@ class Qobj(ArchiveSection):
         type=np.int32,
         shape=['*'],
         description=(
-            """Shape of the underlying data array.
-            Example for a ket : [2, 1]."""
+            """Shape of the object's matrix or vector representation.
+            For a 2-level ket, this might be [2,1].
+            For a 2x2 operator, [2,2]."""
         ),
     )
 
     type = Quantity(
-        type=MEnum('ket', 'bra', 'oper', 'super'),
+        type=MEnum('ket', 'bra', 'oper', 'super', 'dm'),
         description=(
-            """Type of the quantum object.
-            'ket' for state vectors,
-            'bra' for dual vectors,
-            'oper' for operators,
-            'super' for superoperators."""
+            """Logical type of the quantum object:
+               - 'ket' for state vectors,
+               - 'bra' for dual vectors,
+               - 'oper' for operators,
+               - 'super' for superoperators,
+               - 'dm' for density matrices."""
         ),
     )
 
-    dtype = Quantity(
+    storage_format = Quantity(
         type=str,
         description=(
-            """Numerical storage format of the Qobj's data. For example, 'Dense' for a
-            full matrix or 'csr' for a compressed sparse row representation."""
+            """String label for the numerical storage format
+            (e.g., 'Dense', 'csr', 'ELL')."""
         ),
     )
 
-    isherm = Quantity(
+    is_hermitian = Quantity(
         type=bool,
-        description=("""Flag indicating whether the operator is Hermitian."""),
+        description="""True if this object is Hermitian (self-adjoint).
+        (only relevant for 'oper'/'dm').""",
     )
 
     data = Quantity(
-        type=np.float64,
+        type=np.complex128,
         shape=['*', '*'],
         description=(
-            """Sparse matrix characterizing the quantum object."""
+            """The underlying array or matrix representing this quantum object.
+            TODO: sparse matrix representations."""
         ),
     )
 
-    def normalize(self, archive, logger) -> None:
-        """
-        Normalization method to check consistency of the Qobj.
+    # def normalize(self, archive, logger) -> None:
+    #     """
+    #     check consistency between 'shape' and data.shape,
+    #     and optionally perform further consistency checks (Hermiticity, etc.).
+    #     """
+    #     super().normalize(archive, logger)
+    #     if self.data is not None and len(self.shape) == 2:
+    #         actual_data_shape = list(self.data.shape)
+    #         declared_shape = list(self.shape)
+    #         if declared_shape != actual_data_shape:
+    #             logger.warning(
+    #                 'Inconsistent shape!'
+    #             )
 
-        """
-        super().normalize(archive, logger)
-        # a simple example for the normalization function
-        if self.data is not None:
-            data_shape = list(self.data.shape)
-            if self.shape != data_shape:
-                logger.warning(
-                    "Inconsistent shape!"
-                )
+
+class QuantumSystem(ModelSystem):
+    """
+    A specialized 'model system' for quantum information simulations,
+    e.g., representing a set of qubits, spins, or multi-level systems.
+    Inherits from ModelSystem to remain compatible with existing archiving.
+    """
+
+    name = Quantity(type=str, description='Optional label for this quantum system.')
+
+    num_qubits = Quantity(
+        type=int, description='Number of qubits/spin-1/2 sites in this quantum system.'
+    )
+
+
+class QuantumOperator(ArchiveSection):
+    """
+    A container for quantum operators, referencing a Qobj or storing
+    additional operator info. Not strictly required to inherit from ModelMethod.
+    """
+
+    name = Quantity(
+        type=str, description="Label for the operator (e.g. 'Hamiltonian', 'sigmaz')."
+    )
+
+    quantum_object = SubSection(
+        sub_section=QuantumObject.m_def,
+        repeats=False,
+        description='The underlying quantum object (operator form).',
+    )
+
+
+class QuantumState(ArchiveSection):
+    """
+    A container for wavefunction or density-matrix states in HPC simulations.
+    """
+
+    label = Quantity(type=str, description='Optional label for this quantum state.')
+
+    quantum_object = SubSection(
+        sub_section=QuantumObject.m_def,
+        repeats=False,
+        description='The underlying quantum object representing this state.',
+    )
+
+
+class QuantumCircuit(ArchiveSection):
+    """
+    A container for gate-based quantum circuits, e.g., from OpenQASM or Cirq.
+    """
+
+    circuit_representation = Quantity(
+        type=str, description='Circuit definition (OpenQASM, Cirq JSON, etc.).'
+    )
+
+
+class QuantumSimulation(Simulation):
+    """
+    A specialized 'Simulation' to represent quantum calculations
+    (time evolution, state preparation, gate-based sim, etc.).
+    Inherits from Simulation so it has 'program', 'model_system', 'model_method',
+    'outputs', etc. from nomad-simulations by default.
+    """
+
+    # Reference a specialized QuantumSystem (instead of the usual ModelSystem)
+    quantum_system = SubSection(
+        sub_section=QuantumSystem.m_def,
+        repeats=False,
+        description="""System definition for HPC quantum simulations.
+        E.g. qubits, spins etc.""",
+    )
+
+    quantum_operators = SubSection(
+        sub_section=QuantumOperator.m_def,
+        repeats=True,
+        description='List of HPC quantum operators (Hamiltonian, jump ops, etc.).',
+    )
+
+    quantum_states = SubSection(
+        sub_section=QuantumState.m_def,
+        repeats=True,
+        description='List of HPC quantum states (initial states, final states, etc.).',
+    )
+
+    quantum_circuit = SubSection(
+        sub_section=QuantumCircuit.m_def,
+        repeats=False,
+        description='Gate-based circuit if relevant to this calculation.',
+    )
 
 
 m_package.__init_metainfo__()
