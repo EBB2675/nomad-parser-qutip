@@ -128,14 +128,14 @@ class QuantumOperator(ArchiveSection):
 
     quantum_object = SubSection(
         sub_section=QuantumObject.m_def,
-        repeats=False,
+        repeats=True,
         description='The underlying quantum object (operator form).',
     )
 
 
 class QuantumState(ArchiveSection):
     """
-    A container for wavefunction or density-matrix states in HPC simulations.
+    A container for wavefunction or density-matrix states.
     """
 
     label = Quantity(type=str, description='Optional label for this quantum state.')
@@ -169,20 +169,20 @@ class QuantumSimulation(Simulation):
     quantum_system = SubSection(
         sub_section=QuantumSystem.m_def,
         repeats=False,
-        description="""System definition for HPC quantum simulations.
+        description="""System definition for quantum simulations.
         E.g. qubits, spins etc.""",
     )
 
     quantum_operators = SubSection(
         sub_section=QuantumOperator.m_def,
         repeats=True,
-        description='List of HPC quantum operators (Hamiltonian, jump ops, etc.).',
+        description='List of quantum operators (Hamiltonian, jump ops, etc.).',
     )
 
     quantum_states = SubSection(
         sub_section=QuantumState.m_def,
         repeats=True,
-        description='List of HPC quantum states (initial states, final states, etc.).',
+        description='List of quantum states (initial states, final states, etc.).',
     )
 
     quantum_circuit = SubSection(

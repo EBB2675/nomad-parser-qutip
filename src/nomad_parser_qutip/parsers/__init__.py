@@ -16,5 +16,7 @@ parser_entry_point = QutipEntryPoint(
     # The following is a regular expression for the name of a potential mainfile.
     # If this expression is given:
     # the parser is only considered for a file, if the expression matches.
-    mainfile_name_re='.*\.out.*',
+    # mainfile_name_re='.*\.json.*',
+    mainfile_name_re=r'.*\.json$',
+    # mainfile_contents_re=r'QuTiP',
 )
