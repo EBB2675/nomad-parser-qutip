@@ -10,6 +10,6 @@ from nomad_parser_qutip.parsers.parser import QutipParser
 def test_parse_file():
     parser = QutipParser()
     archive = EntryArchive()
-    parser.parse('tests/data/example.out', archive, logging.getLogger())
+    parser.parse('tests/data/simulation_driven.json', archive, logging.getLogger())
 
     assert archive.workflow2.name == 'test'
