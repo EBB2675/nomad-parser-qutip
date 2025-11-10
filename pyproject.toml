@@ -7,7 +7,6 @@ classifiers = [
     "Intended Audience :: Developers",
     "Operating System :: OS Independent",
     "Programming Language :: Python",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -17,7 +16,7 @@ name = "nomad-parser-qutip"
 description = "a parser for QuTiP while extending the nomad-simulations schema"
 version = "0.1.0"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 authors = [
     { name = "Esma Boydas", email = "esma.boydas@physik.hu-berlin.de" },
 ]
@@ -90,6 +89,9 @@ fixable = ["ALL"]
 # Allow unused variables when underscore-prefixed.
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["PLC0415"] # import-outside-top-level
+
 # this is entirely optional, you can remove this if you wish to
 [tool.ruff.format]
 # use single quotes for strings.
@@ -116,6 +118,7 @@ schema_package_entry_point = "nomad_parser_qutip.schema_packages:schema_package_
 
 
 
+action_entry_point = "nomad_parser_qutip.actions:simple_action_entry_point"
 [tool.cruft]
 # Avoid updating workflow files, this leads to permissions issues
 skip = [".github/*"]
